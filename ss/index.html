@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espacio 3D y eventos especiales</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: black; position: relative; }
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: -1; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+    <script>
+        let scene, camera, renderer, stars, clock;
+        let objects = [];
+        let mouseX = 0, mouseY = 0;
+        let velocityX = 0, velocityY = 0;
+        let newUser = false;
+        let hasSeenIntro = false;
+
+        // Comprobación de si el usuario es nuevo o no usando localStorage y User-Agent
+        function checkUser() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const visitedKey = 'hasVisited';
+            const introSeenKey = 'hasSeenIntro';
+            
+            // Si ya ha visitado la página, no mostrar la animación
+            if (!localStorage.getItem(visitedKey)) {
+                localStorage.setItem(visitedKey, 'true');
+                newUser = true;
+            } else {
+                // Verificamos si ha visto la animación del intro anteriormente usando el User-Agent
+                if (localStorage.getItem(introSeenKey) && userAgent.includes('chrome')) {
+                    hasSeenIntro = true;
+                }
+            }
+        }
+
+        // Inicialización del escenario
+        function init() {
+            checkUser();
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xffffff, 1.5);
+            pointLight.position.set(100, 100, 100);
+            scene.add(pointLight);
+
+            stars = new THREE.Group();
+            for (let i = 0; i < 5000; i++) { // 4K estrellas
+                let geometry = new THREE.SphereGeometry(0.1, 10, 10);
+                let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                let star = new THREE.Mesh(geometry, material);
+                star.position.set((Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000);
+                stars.add(star);
+            }
+            scene.add(stars);
+
+            clock = new THREE.Clock();
+            generateObjects();
+            animate();
+        }
+
+        // Animación de la escena
+        function animate() {
+            requestAnimationFrame(animate);
+
+            stars.rotation.x += 0.0002;
+            stars.rotation.y += 0.0002;
+
+            let delta = clock.getDelta();
+            velocityX += (mouseX - velocityX) * delta * 0.5;
+            velocityY += (-mouseY - velocityY) * delta * 0.5;
+            camera.position.x += velocityX;
+            camera.position.y += velocityY;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+
+        // Movimiento del ratón para mover la cámara
+        function onMouseMove(event) {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+        }
+
+        // Obtener la hora en España
+        function getSpanishTime() {
+            let date = new Date();
+            let timeInSpain = date.getHours() + 1; // España está en UTC+1
+            if (timeInSpain > 23) timeInSpain = 0; // Ajuste para horas de la noche
+            return timeInSpain;
+        }
+
+        // Generación de objetos en la escena
+        function generateObjects() {
+            let hour = getSpanishTime();
+            let day = new Date().getDate();
+            let month = new Date().getMonth();
+
+            if (hour % 3 === 0) {
+                addPlanet();
+            }
+            if (day % 7 === 0) {
+                addBlackHole();
+            }
+            if (Math.random() < 0.2) {
+                addSpaceship();
+            }
+            if (day === 15 && hour === 20) {
+                addLostAstronaut();
+            }
+            if (month % 2 === 0 && day === 10) {
+                addPlanetAlignment();
+            }
+
+            if (newUser && !hasSeenIntro) {
+                startEpicAnimation();
+            }
+        }
+
+        // Añadir planeta (Tierra)
+        function addPlanet() {
+            let texture = new THREE.TextureLoader().load('https://threejsfundamentals.org/threejs/resources/images/earth-atmos-2048.jpg');
+            let geometry = new THREE.SphereGeometry(2, 64, 64);
+            let material = new THREE.MeshStandardMaterial({ map: texture });
+            let planet = new THREE.Mesh(geometry, material);
+            planet.position.set(0, 0, 0); // Tierra en el centro
+            scene.add(planet);
+            objects.push(planet);
+        }
+
+        // Añadir agujero negro
+        function addBlackHole() {
+            let geometry = new THREE.TorusGeometry(4, 1, 64, 100);
+            let material = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            let blackhole = new THREE.Mesh(geometry, material);
+            blackhole.position.set(0, 0, -300);
+            scene.add(blackhole);
+            objects.push(blackhole);
+        }
+
+        // Añadir nave espacial
+        function addSpaceship() {
+            let geometry = new THREE.ConeGeometry(1, 3, 32);
+            let material = new THREE.MeshStandardMaterial({ color: 0xff2200 });
+            let spaceship = new THREE.Mesh(geometry, material);
+            spaceship.position.set((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, -60);
+            spaceship.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+            scene.add(spaceship);
+            objects.push(spaceship);
+        }
+
+        // Añadir astronauta perdido
+        function addLostAstronaut() {
+            let geometry = new THREE.SphereGeometry(1, 32, 32);
+            let material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            let astronaut = new THREE.Mesh(geometry, material);
+            astronaut.position.set((Math.random() - 0.5) * 400, (Math.random() - 0.5) * 400, -100);
+            scene.add(astronaut);
+            objects.push(astronaut);
+        }
+
+        // Añadir alineación de planetas
+        function addPlanetAlignment() {
+            for (let i = 0; i < 5; i++) {
+                addPlanet();
+            }
+        }
+
+        // Animación épica de inicio
+        function startEpicAnimation() {
+            // Mostrar la animación de alejamiento: desde la Tierra hasta el agujero negro
+            gsap.to(camera.position, { x: 0, y: 0, z: 500, duration: 15, ease: "power2.out" });
+            gsap.to(camera.rotation, { x: -Math.PI / 2, y: Math.PI, duration: 15, ease: "power2.out" });
+
+            // Mostrar el Sol, la Luna, los satélites, etc. durante el alejamiento
+            let distance = 500;
+            setTimeout(() => {
+                // Mostrar la Tierra, el Sol, la Luna, y otros objetos aquí según te alejas
+                addSun();
+                addMoon();
+                addSatellites();
+            }, 5000);
+
+            // Finalizar animación y pasar al agujero negro
+            setTimeout(() => {
+                localStorage.setItem('hasSeenIntro', 'true');
+                gsap.to(camera.position, { x: 0, y: 0, z: -700, duration: 5, ease: "power2.in" });
+            }, 15000);
+        }
+
+        // Añadir el Sol
+        function addSun() {
+            let texture = new THREE.TextureLoader().load('https://example.com/sun_texture.jpg');
+            let geometry = new THREE.SphereGeometry(15, 64, 64);
+            let material = new THREE.MeshBasicMaterial({ map: texture });
+            let sun = new THREE.Mesh(geometry, material);
+            sun.position.set(0, 0, -300);
+            scene.add(sun);
+            objects.push(sun);
+        }
+
+        // Añadir la Luna
+        function addMoon() {
+            let texture = new THREE.TextureLoader().load('https://example.com/moon_texture.jpg');
+            let geometry = new THREE.SphereGeometry(5, 32, 32);
+            let material = new THREE.MeshStandardMaterial({ map: texture });
+            let moon = new THREE.Mesh(geometry, material);
+            moon.position.set(30, 0, -300);
+            scene.add(moon);
+            objects.push(moon);
+        }
+
+        // Añadir satélites
+        function addSatellites() {
+            let geometry = new THREE.SphereGeometry(1, 32, 32);
+            let material = new THREE.MeshStandardMaterial({ color: 0x777777 });
+            for (let i = 0; i < 3; i++) {
+                let satellite = new THREE.Mesh(geometry, material);
+                satellite.position.set((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50, -300);
+                scene.add(satellite);
+                objects.push(satellite);
+            }
+        }
+
+        // Event listener para movimiento del ratón
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("resize", () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+
+        init();
+    </script>
+
+    <script>
+        let scene, camera, renderer, clock;
+        let miniBlackHole;
+        let currentTime = 0;
+        let lastEventTime = -1;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // Calidad ultra (8K)
+            renderer.setClearColor(0x000000, 1); // Fondo negro
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            clock = new THREE.Clock();
+
+            // Configurar luces
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xffffff, 1.5);
+            pointLight.position.set(100, 100, 100);
+            scene.add(pointLight);
+
+            window.addEventListener("resize", () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            });
+
+            setInterval(checkHourlyEvent, 60000); // Revisar cada minuto para asegurar que las horas son exactas
+        }
+
+        function checkHourlyEvent() {
+            let spanishTime = getSpanishTime();
+            
+            // Comprobamos si estamos en una nueva hora exacta
+            if (spanishTime !== lastEventTime) {
+                lastEventTime = spanishTime;
+                if (spanishTime % 1 === 0) { // Solo en horas exactas (cada 1 hora)
+                    createMiniBlackHole();
+                }
+            }
+        }
+
+        function createMiniBlackHole() {
+            // Si ya hay un mini agujero negro, lo eliminamos antes de crear uno nuevo
+            if (miniBlackHole) {
+                scene.remove(miniBlackHole);
+            }
+
+            // Crear el mini agujero negro con mejor textura y resolución
+            let geometry = new THREE.SphereGeometry(5, 64, 64); // Más resolución en la esfera
+            let material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            miniBlackHole = new THREE.Mesh(geometry, material);
+            miniBlackHole.position.set(0, 0, -50);
+            scene.add(miniBlackHole);
+
+            // Activar la animación épica de entrada
+            animateBlackHole();
+        }
+
+        function animateBlackHole() {
+            // Animación de acercamiento al mini agujero negro con GSAP
+            gsap.to(camera.position, {
+                z: -100, // Nos acercamos más al agujero negro
+                duration: 8, 
+                ease: "power2.inOut"
+            });
+
+            gsap.to(miniBlackHole.scale, {
+                x: 15, 
+                y: 15, 
+                z: 15, 
+                duration: 8,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    // Simulamos la entrada al agujero negro
+                    gsap.to(camera.position, { 
+                        z: -250, 
+                        duration: 4, 
+                        ease: "power2.inOut" 
+                    });
+
+                    // Efecto visual dentro del agujero negro
+                    gsap.to(miniBlackHole.position, {
+                        z: -400,
+                        duration: 4,
+                        ease: "power2.inOut"
+                    });
+                }
+            });
+        }
+
+        function getSpanishTime() {
+            let date = new Date();
+            let timeInSpain = date.getHours() + 1; // España está en UTC+1
+            if (timeInSpain > 23) timeInSpain = 0; // Ajuste para horas de la noche
+            return timeInSpain;
+        }
+
+        // Función para animar el mundo
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // Iniciar la escena y la animación
+        init();
+        animate();
+    </script>
+
+    <script>
+        let scene, camera, renderer, clock;
+        let stars, miniPlanets = [];
+        let mouseX = 0, mouseY = 0;
+        let velocityX = 0, velocityY = 0;
+        let starCount = 3000; // Número de estrellas
+        let planetTextures = [
+            'https://threejsfundamentals.org/threejs/resources/images/earth-atmos-2048.jpg',
+            'https://threejsfundamentals.org/threejs/resources/images/moon.jpg',
+            'https://threejsfundamentals.org/threejs/resources/images/venus_surface.jpg'
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // Calidad ultra (8K)
+            renderer.setClearColor(0x000000, 1); // Fondo negro
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Crear estrellas
+            createStars();
+
+            clock = new THREE.Clock();
+            animate();
+
+            // Crear nuevos mini planetas al moverse
+            window.addEventListener("mousemove", onMouseMove);
+            window.addEventListener("resize", () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            });
+        }
+
+        function createStars() {
+            stars = new THREE.Group();
+            for (let i = 0; i < starCount; i++) {
+                let geometry = new THREE.SphereGeometry(0.1, 10, 10);
+                let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                let star = new THREE.Mesh(geometry, material);
+                star.position.set((Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000);
+                stars.add(star);
+            }
+            scene.add(stars);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Hacer que las estrellas desaparezcan a medida que te alejas
+            stars.children.forEach(star => {
+                let distance = camera.position.distanceTo(star.position);
+                let alpha = Math.max(0, 1 - distance / 500);
+                star.material.opacity = alpha; // Estrellas se desvanecen a medida que te alejas
+            });
+
+            // Generar nuevas estrellas cuando te mueves por el espacio
+            if (Math.random() < 0.02) { // Probabilidad de generar nuevas estrellas
+                let star = createRandomStar();
+                stars.add(star);
+            }
+
+            // Mover las estrellas
+            stars.rotation.x += 0.0002;
+            stars.rotation.y += 0.0002;
+
+            // Movimiento suave de la cámara
+            let delta = clock.getDelta();
+            velocityX += (mouseX - velocityX) * delta * 0.5;
+            velocityY += (-mouseY - velocityY) * delta * 0.5;
+            camera.position.x += velocityX;
+            camera.position.y += velocityY;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+
+        function createRandomStar() {
+            let geometry = new THREE.SphereGeometry(0.1, 10, 10);
+            let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            let star = new THREE.Mesh(geometry, material);
+            star.position.set((Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000);
+            return star;
+        }
+
+        function onMouseMove(event) {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+
+            // Crear mini planetas cada vez que te mueves
+            createMiniPlanet();
+        }
+
+        function createMiniPlanet() {
+            // Elegir textura aleatoria
+            let textureURL = planetTextures[Math.floor(Math.random() * planetTextures.length)];
+            let texture = new THREE.TextureLoader().load(textureURL);
+
+            // Crear el mini planeta
+            let geometry = new THREE.SphereGeometry(1, 64, 64);  // Calidad 8K
+            let material = new THREE.MeshStandardMaterial({ map: texture, metalness: 0.5, roughness: 0.5 });
+
+            let miniPlanet = new THREE.Mesh(geometry, material);
+
+            // Posicionarlo aleatoriamente
+            miniPlanet.position.set(
+                (Math.random() - 0.5) * 300, 
+                (Math.random() - 0.5) * 300, 
+                (Math.random() - 0.5) * 300
+            );
+
+            // Animación del planeta
+            gsap.to(miniPlanet.position, {
+                y: miniPlanet.position.y + 10, 
+                duration: 5, 
+                yoyo: true, 
+                repeat: -1, 
+                ease: "power1.inOut"
+            });
+
+            scene.add(miniPlanet);
+            miniPlanets.push(miniPlanet);
+
+            // Limitar la cantidad de planetas en la escena
+            if (miniPlanets.length > 20) {
+                let removedPlanet = miniPlanets.shift();
+                scene.remove(removedPlanet);
+            }
+        }
+
+        init(); // Iniciar la escena
+    </script>
+
+    <script>
+        let scene, camera, renderer, clock, starsGroup, miniPlanets = [];
+        let mouseX = 0, mouseY = 0;
+        let velocityX = 0, velocityY = 0;
+        let starCount = 1000; // Número de estrellas iniciales
+        let starDistance = 2000; // Distancia inicial de las estrellas
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // Crear estrellas
+            starsGroup = new THREE.Group();
+            createStars(starCount, starDistance);
+
+            clock = new THREE.Clock();
+            animate();
+
+            // Eventos de mouse
+            window.addEventListener("mousemove", onMouseMove);
+            window.addEventListener("resize", onWindowResize);
+        }
+
+        function createStars(count, distance) {
+            for (let i = 0; i < count; i++) {
+                let geometry = new THREE.SphereGeometry(0.1, 10, 10);
+                let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                let star = new THREE.Mesh(geometry, material);
+                star.position.set(
+                    (Math.random() - 0.5) * distance * 2,
+                    (Math.random() - 0.5) * distance * 2,
+                    (Math.random() - 0.5) * distance * 2
+                );
+                starsGroup.add(star);
+            }
+            scene.add(starsGroup);
+        }
+
+        function onMouseMove(event) {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+
+            // Generar mini planetas cuando el mouse se mueve
+            createMiniPlanet();
+        }
+
+        function createMiniPlanet() {
+            // Crear mini planeta con textura
+            let planetTexture = new THREE.TextureLoader().load('https://threejsfundamentals.org/threejs/resources/images/earth-atmos-2048.jpg');
+            let geometry = new THREE.SphereGeometry(1, 64, 64);
+            let material = new THREE.MeshStandardMaterial({ map: planetTexture });
+            let miniPlanet = new THREE.Mesh(geometry, material);
+
+            // Posicionar el mini planeta en una ubicación aleatoria
+            miniPlanet.position.set(
+                (Math.random() - 0.5) * 200, 
+                (Math.random() - 0.5) * 200, 
+                (Math.random() - 0.5) * 200
+            );
+            
+            scene.add(miniPlanet);
+            miniPlanets.push(miniPlanet);
+            
+            // Limitar la cantidad de mini planetas visibles
+            if (miniPlanets.length > 10) {
+                let removedPlanet = miniPlanets.shift();
+                scene.remove(removedPlanet);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Hacer que las estrellas desaparezcan a medida que te alejas
+            starsGroup.children.forEach(star => {
+                let distance = camera.position.distanceTo(star.position);
+                let alpha = Math.max(0, 1 - distance / starDistance);
+                star.material.opacity = alpha;
+            });
+
+            // Generar nuevas estrellas mientras te mueves
+            if (Math.random() < 0.02) { // Probabilidad de generar nuevas estrellas
+                let newStar = createRandomStar();
+                starsGroup.add(newStar);
+            }
+
+            // Mover las estrellas
+            starsGroup.rotation.x += 0.0002;
+            starsGroup.rotation.y += 0.0002;
+
+            // Movimiento suave de la cámara
+            let delta = clock.getDelta();
+            velocityX += (mouseX - velocityX) * delta * 0.5;
+            velocityY += (-mouseY - velocityY) * delta * 0.5;
+            camera.position.x += velocityX;
+            camera.position.y += velocityY;
+            camera.lookAt(scene.position);
+
+            // Animación de eventos: planetas, agujeros negros, etc.
+            handleEvents();
+
+            renderer.render(scene, camera);
+        }
+
+        function createRandomStar() {
+            let geometry = new THREE.SphereGeometry(0.1, 10, 10);
+            let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            let star = new THREE.Mesh(geometry, material);
+            star.position.set(
+                (Math.random() - 0.5) * starDistance * 2,
+                (Math.random() - 0.5) * starDistance * 2,
+                (Math.random() - 0.5) * starDistance * 2
+            );
+            return star;
+        }
+
+        function handleEvents() {
+            // Llamada para agregar eventos de planetas, agujeros negros, y más según el horario
+            let hour = new Date().getHours();
+            let day = new Date().getDate();
+
+            if (hour % 3 === 0) {
+                addPlanet();
+            }
+            if (day % 7 === 0) {
+                addBlackHole();
+            }
+            if (Math.random() < 0.1) {
+                addSpaceship();
+            }
+            if (day === 15 && hour === 20) {
+                addLostAstronaut();
+            }
+        }
+
+        function addPlanet() {
+            let texture = new THREE.TextureLoader().load('https://threejsfundamentals.org/threejs/resources/images/earth-atmos-2048.jpg');
+            let geometry = new THREE.SphereGeometry(2, 64, 64);
+            let material = new THREE.MeshStandardMaterial({ map: texture });
+            let planet = new THREE.Mesh(geometry, material);
+            planet.position.set((Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200, -50);
+            scene.add(planet);
+        }
+
+        function addBlackHole() {
+            let geometry = new THREE.TorusGeometry(4, 1, 64, 100);
+            let material = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            let blackhole = new THREE.Mesh(geometry, material);
+            blackhole.position.set((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, -80);
+            scene.add(blackhole);
+        }
+
+        function addSpaceship() {
+            let geometry = new THREE.ConeGeometry(1, 3, 32);
+            let material = new THREE.MeshStandardMaterial({ color: 0xff2200 });
+            let spaceship = new THREE.Mesh(geometry, material);
+            spaceship.position.set((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, -60);
+            scene.add(spaceship);
+        }
+
+        function addLostAstronaut() {
+            let geometry = new THREE.SphereGeometry(1, 32, 32);
+            let material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            let astronaut = new THREE.Mesh(geometry, material);
+            astronaut.position.set((Math.random() - 0.5) * 400, (Math.random() - 0.5) * 400, -100);
+            scene.add(astronaut);
+        }
+
+        function onWindowResize() {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        }
+
+        init();
+    </script>
+
+    <script>
+        let scene, camera, renderer, clock, starsGroup, starCount = 1000, maxDistance = 5000;
+        let mouseX = 0, mouseY = 0;
+        let velocityX = 0, velocityY = 0;
+        let stars = [];
+        let starGenerationRange = 1500; // Rango de distancia en el que nuevas estrellas se generarán
+        let starDistanceFactor = 2000; // Factor para la distancia de las estrellas
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, maxDistance);
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // Crear grupo de estrellas
+            starsGroup = new THREE.Group();
+            scene.add(starsGroup);
+
+            clock = new THREE.Clock();
+            animate();
+
+            // Eventos de mouse
+            window.addEventListener("mousemove", onMouseMove);
+            window.addEventListener("resize", onWindowResize);
+        }
+
+        function createStar() {
+            let geometry = new THREE.SphereGeometry(0.1, 10, 10);
+            let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            let star = new THREE.Mesh(geometry, material);
+            
+            // Posicionar la estrella aleatoriamente en el espacio
+            star.position.set(
+                (Math.random() - 0.5) * starDistanceFactor * 2,
+                (Math.random() - 0.5) * starDistanceFactor * 2,
+                (Math.random() - 0.5) * starDistanceFactor * 2
+            );
+            return star;
+        }
+
+        function onMouseMove(event) {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Generar estrellas nuevas y eliminar las que están demasiado lejos
+            let distanceThreshold = 3000; // Distancia máxima a partir de la cual las estrellas desaparecen
+            stars.forEach(star => {
+                let distance = camera.position.distanceTo(star.position);
+
+                // Si la estrella está demasiado lejos, la eliminamos
+                if (distance > distanceThreshold) {
+                    starsGroup.remove(star);
+                    stars.splice(stars.indexOf(star), 1);
+                }
+            });
+
+            // Generar nuevas estrellas cuando el número de estrellas se reduzca
+            if (stars.length < starCount) {
+                let newStar = createStar();
+                stars.push(newStar);
+                starsGroup.add(newStar);
+            }
+
+            // Movimiento de la cámara
+            let delta = clock.getDelta();
+            velocityX += (mouseX - velocityX) * delta * 0.5;
+            velocityY += (-mouseY - velocityY) * delta * 0.5;
+            camera.position.x += velocityX;
+            camera.position.y += velocityY;
+            camera.lookAt(scene.position);
+
+            // Renderizar la escena
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        }
+
+        init();
+    </script>
+
+<script>
+function checkProximityToMiniBlackHoles() {
+    let closestMiniBlackHole = null;
+    let minDistance = 50; // Distancia mínima para activar la animación
+
+    miniAgujerosNegros.forEach(miniAgujero => {
+        let distance = camera.position.distanceTo(miniAgujero.position);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestMiniBlackHole = miniAgujero;
+        }
+    });
+
+    if (closestMiniBlackHole) {
+        interactionText.innerText = "Entrar antes de tiempo al mini agujero negro y experimentar";
+        interactionText.style.opacity = `${Math.min(1, 1 - minDistance / 50)}`;
+        interactionText.onclick = () => enterMiniBlackHole(closestMiniBlackHole);
+    } else {
+        interactionText.style.opacity = "0";
+    }
+}
+
+function enterMiniBlackHole(miniAgujero) {
+    fadeToBlack(() => {
+        setTimeout(() => {
+            triggerRandomEvent();
+            fadeFromBlack();
+        }, 3000); // Oscuridad épica de 3 segundos antes del evento
+    });
+}
+
+function fadeToBlack(callback) {
+    let blackout = document.createElement("div");
+    blackout.style.position = "fixed";
+    blackout.style.top = "0";
+    blackout.style.left = "0";
+    blackout.style.width = "100%";
+    blackout.style.height = "100%";
+    blackout.style.background = "black";
+    blackout.style.zIndex = "1000";
+    blackout.style.transition = "opacity 1s ease-in-out";
+    blackout.style.opacity = "0";
+    document.body.appendChild(blackout);
+
+    setTimeout(() => {
+        blackout.style.opacity = "1";
+        setTimeout(() => {
+            callback();
+            setTimeout(() => {
+                blackout.style.opacity = "0";
+                setTimeout(() => document.body.removeChild(blackout), 1000);
+            }, 2000);
+        }, 1000);
+    }, 100);
+}
+
+function fadeFromBlack() {
+    // Este es solo un helper para limpiar la animación
+}
+
+function triggerRandomEvent() {
+    let events = [
+        () => alert("¡Todo se está corrompiendo! La realidad se distorsiona..."),
+        () => alert("Miles de astronautas aparecen... ¿dónde estoy?"),
+        () => alert("¡Error en la Matrix! Todo está fallando..."),
+        () => alert("Has entrado en un vacío total. No hay nada aquí..."),
+        () => {
+            scene.remove(stars);
+            stars = new THREE.Group();
+            createStars(true);
+            alert("Las estrellas han cambiado de color...");
+        },
+        // Evento 1: Aparecen miles de astronautas flotando
+        () => {
+            let astronautCount = 1000; // Puedes ajustar este número según tus necesidades
+            for (let i = 0; i < astronautCount; i++) {
+                let astronaut = createAstronaut(); // Función para crear astronautas
+                scene.add(astronaut);
+            }
+            alert("¡Miles de astronautas han aparecido de la nada!");
+        },
+        // Evento 2: Aparecen cabezas alienígenas flotando
+        () => {
+            let alienHeadCount = 500; // Puedes ajustar este número según tus necesidades
+            for (let i = 0; i < alienHeadCount; i++) {
+                let alienHead = createAlienHead(); // Función para crear cabezas alienígenas
+                scene.add(alienHead);
+            }
+            alert("¡Cientos de cabezas alienígenas flotan alrededor!");
+        },
+        // Evento 3: Distorsión en el entorno (el espacio se deforma)
+        () => {
+            distortSpace(); // Función para distorsionar el espacio, puedes implementarlo como desfigurar la escena
+            alert("El espacio se está distorsionando... ¡Todo se ve raro!");
+        },
+        // Evento 4: El fondo cambia y aparece una galaxia lejana
+        () => {
+            changeBackground(); // Función para cambiar el fondo a una galaxia u otra imagen
+            alert("El fondo ha cambiado a una galaxia lejana.");
+        },
+        // Evento 5: El tiempo se detiene brevemente
+        () => {
+            freezeTime(); // Función que congela el tiempo por un corto periodo
+            alert("El tiempo se ha detenido por un momento...");
+        },
+        // Evento 6: La gravedad cambia y el jugador empieza a flotar
+        () => {
+            changeGravity(); // Función para modificar la gravedad (se podría simular flotación)
+            alert("La gravedad ha cambiado. ¡Estás flotando!");
+        }
+    ];
+
+    // Ejecutamos un evento aleatorio
+    let randomEvent = events[Math.floor(Math.random() * events.length)];
+    randomEvent();
+}
+
+// Funciones de eventos adicionales
+
+// Crear astronautas
+function createAstronaut() {
+    let astronaut = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    astronaut.position.set(
+        Math.random() * 100 - 50,
+        Math.random() * 100 - 50,
+        Math.random() * 100 - 50
+    );
+    return astronaut;
+}
+
+// Crear cabezas alienígenas
+function createAlienHead() {
+    let alienHead = new THREE.Mesh(
+        new THREE.SphereGeometry(3, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+    );
+    alienHead.position.set(
+        Math.random() * 100 - 50,
+        Math.random() * 100 - 50,
+        Math.random() * 100 - 50
+    );
+    return alienHead;
+}
+
+// Distorsionar el espacio
+function distortSpace() {
+    // Implementa una distorsión visual aquí, como distorsionar la geometría de los objetos
+    scene.children.forEach(child => {
+        if (child instanceof THREE.Mesh) {
+            child.scale.set(
+                Math.random() * 2 + 0.5,
+                Math.random() * 2 + 0.5,
+                Math.random() * 2 + 0.5
+            );
+        }
+    });
+}
+
+// Cambiar el fondo
+function changeBackground() {
+    let texture = new THREE.TextureLoader().load("galaxy_texture.jpg"); // Cambia la imagen por una galaxia
+    scene.background = texture;
+}
+
+// Congelar el tiempo (puede implicar detener animaciones o movimiento)
+function freezeTime() {
+    // Esto podría pausarse todas las animaciones o movimiento de cámara por un momento
+    let oldTime = Date.now();
+    let freezeDuration = 2000; // Congelar por 2 segundos
+    let pause = () => {
+        if (Date.now() - oldTime > freezeDuration) {
+            cancelAnimationFrame(pause);
+        }
+    };
+    requestAnimationFrame(pause);
+}
+
+// Cambiar la gravedad
+function changeGravity() {
+    // Este es un ejemplo muy simple, pero puede simularse aplicando una fuerza de gravedad invertida o un objeto flotante
+    camera.position.y += 10; // Ejemplo: el jugador empieza a flotar
+}
+
+// Comprobación constante de proximidad
+function update() {
+    requestAnimationFrame(update);
+    checkProximityToMiniBlackHoles();
+}
+update();
+</script>
+
+<script>
+let camera, scene, renderer;
+let velocity = new THREE.Vector3();
+let direction = new THREE.Vector3();
+let moveSpeed = 5; // Velocidad de movimiento
+let rotationSpeed = 0.1; // Velocidad de rotación
+
+// Crear la escena, cámara y renderizador
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Posición inicial de la cámara
+    camera.position.set(0, 10, 0); // Empieza un poco elevado
+
+    // Eventos de teclado
+    document.addEventListener('keydown', onKeyDown, false);
+    document.addEventListener('keyup', onKeyUp, false);
+
+    // Loop de animación
+    animate();
+}
+
+// Variables de estado de las teclas
+let keys = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    down: false, // Para bajar con Ctrl
+};
+
+// Detectar cuando se presiona o se suelta una tecla
+function onKeyDown(event) {
+    switch (event.code) {
+        case 'KeyW':
+            keys.forward = true;
+            break;
+        case 'KeyS':
+            keys.backward = true;
+            break;
+        case 'KeyA':
+            keys.left = true;
+            break;
+        case 'KeyD':
+            keys.right = true;
+            break;
+        case 'ControlLeft': // Ctrl
+            keys.down = true;
+            break;
+    }
+}
+
+function onKeyUp(event) {
+    switch (event.code) {
+        case 'KeyW':
+            keys.forward = false;
+            break;
+        case 'KeyS':
+            keys.backward = false;
+            break;
+        case 'KeyA':
+            keys.left = false;
+            break;
+        case 'KeyD':
+            keys.right = false;
+            break;
+        case 'ControlLeft': // Ctrl
+            keys.down = false;
+            break;
+    }
+}
+
+// Función de animación
+function animate() {
+    requestAnimationFrame(animate);
+
+    // Mover la cámara según las teclas presionadas
+    move();
+
+    // Renderizar la escena
+    renderer.render(scene, camera);
+}
+
+// Función de movimiento de la cámara
+function move() {
+    let delta = 0.1; // Ajusta la velocidad del movimiento
+
+    // Resetea la dirección de movimiento
+    direction.set(0, 0, 0);
+
+    if (keys.forward) direction.z -= 1;
+    if (keys.backward) direction.z += 1;
+    if (keys.left) direction.x -= 1;
+    if (keys.right) direction.x += 1;
+    if (keys.down) direction.y -= 1; // Bajar cuando se presiona Ctrl
+
+    // Normalizamos la dirección para que la velocidad sea constante en todas las direcciones
+    direction.normalize().multiplyScalar(delta * moveSpeed);
+
+    // Mover la cámara
+    camera.position.add(direction);
+}
+
+// Llamar a la función de inicialización
+init();
+</script>
+
+</body>
+</html>
