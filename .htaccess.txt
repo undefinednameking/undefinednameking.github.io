@@ -1,0 +1,64 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteOptions InheritBefore
+    RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
+    RewriteRule .* - [E=USANDO_PROXY:1]
+
+    RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
+    RewriteCond %{TIME} >%{ENV:BLOCKED_TIME}
+    RewriteRule .* - [E=PETICIONES:%{ENV:PETICIONES}+1,NE]
+    RewriteCond %{ENV:PETICIONES} >10
+    RewriteRule .* - [E=BLOCKED_TIME:%{TIME}+86400,L,F]
+
+    RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
+    RewriteCond %{TIME} >%{ENV:BLOCKED_TIME_PROXY}
+    RewriteRule .* - [E=PETICIONES_PROXY:%{ENV:PETICIONES_PROXY}+1,NE]
+    RewriteCond %{ENV:PETICIONES_PROXY} >9
+    RewriteRule .* - [E=BLOCKED_TIME_PROXY:%{TIME}+86400,L,F]
+
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|DELETE|CONNECT|OPTIONS)$
+    RewriteRule .* - [F,L]
+</IfModule>
+
+<IfModule mod_reqtimeout.c>
+    RequestReadTimeout header=5-10,MinRate=600 body=5-10,MinRate=600
+</IfModule>
+
+<IfModule mod_evasive.c>
+    DOSHashTableSize 2048
+    DOSPageCount 5
+    DOSSiteCount 10
+    DOSPageInterval 2
+    DOSSiteInterval 5
+    DOSBlockingPeriod 600
+</IfModule>
+
+<IfModule mod_log_config.c>
+    LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" access_custom
+    CustomLog logs/access_custom.log access_custom
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteCond %{ENV:REMOTE_ADDR} ^.+$
+    RewriteCond %{ENV:REMOTE_ADDR} ^(.+)$
+    RewriteCond %{ENV:REQ_COUNT} >5
+    RewriteRule .* - [F,L]
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_URI} ^/ [NC]
+    RewriteCond %{ENV:TIME_RELOAD} >60
+    RewriteRule .* - [E=BLOCKED_TIME_RELOAD:1]
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REMOTE_ADDR} ^(.*)$
+    RewriteCond %{TIME} >%{ENV:BLOCKED_TIME}
+    RewriteRule .* - [E=PETICIONES:%{ENV:PETICIONES}+1]
+    RewriteCond %{ENV:PETICIONES} >10
+    RewriteRule .* - [E=BLOCKED_TIME:%{TIME}+86400,L,F]
+
+    RewriteCond %{TIME} >%{ENV:BLOCKED_TIME_RELOAD}
+    RewriteRule .* - [E=BLOCKED_TIME_RELOAD:%{TIME}+86400,L,F]
+</IfModule>

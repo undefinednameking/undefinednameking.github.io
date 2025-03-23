@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Página principal -->
+  <url>
+    <loc>https://undefinedname-rr.netlify.app/</loc>
+    <lastmod>2025-03-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Página de contacto -->
+  <url>
+    <loc>https://undefinedname-rr.netlify.app/contact</loc>
+    <lastmod>2025-03-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Página sobre mí -->
+  <url>
+    <loc>https://undefinedname-rr.netlify.app/about</loc>
+    <lastmod>2025-03-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blog principal -->
+  <url>
+    <loc>https://undefinedname-rr.netlify.app/blog</loc>
+    <lastmod>2025-03-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Entradas del blog -->
+  <url>
+    <loc>https://undefinedname-rr.netlify.app/blog/post-1</loc>
+    <lastmod>2025-03-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://undefinedname-rr.netlify.app/blog/post-2</loc>
+    <lastmod>2025-03-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Política de privacidad -->
+  <url>
+    <loc>https://undefinedname-rr.netlify.app/privacy-policy</loc>
+    <lastmod>2025-03-21</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Términos de servicio -->
+  <url>
+    <loc>https://undefinedname-rr.netlify.app/terms</loc>
+    <lastmod>2025-03-21</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>

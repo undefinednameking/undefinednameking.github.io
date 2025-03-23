@@ -1,0 +1,391 @@
+[[redirects]]
+  from = "/cgi-bin/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/private-data/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/draft/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/coming-soon/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/under-construction/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/user-registration/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/user-content/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/error-logs/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/draft/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/coming-soon/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/under-construction/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/user-registration/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/user-content/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/error-logs/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[headers]]
+name = "X-SQL-Injection-Detected"
+value = "true"
+conditions = [
+  { query_string = ".*<.*script.*>.*" },
+  { query_string = ".*union.*select.*\(" },
+  { query_string = ".*select.*from" },
+  { query_string = ".*\"|'.*?(or|and).*('|\").*=.*" },
+  { query_string = ".*\/\*.*\*\/" },
+  { query_string = ".*@@version|information_schema.*" }
+]
+
+[[redirects]]
+from = "^/\\.htaccess$"
+to = "/"
+status = 403
+
+[[redirects]]
+from = "^/\\.git"
+to = "/"
+status = 403
+
+[[redirects]]
+from = "^/\\.env"
+to = "/"
+status = 403
+
+[[redirects]]
+from = "^/config\\.inc\\.php"
+to = "/"
+status = 403
+
+[[headers]]
+name = "X-DOS-Protection"
+value = "enabled"
+conditions = [
+  { request_count = ">5" },
+  { time = "<1m" }  # Bloqueo si se superan las 5 solicitudes en 1 minuto
+]
+
+[[headers]]
+name = "X-DOS-Blocked"
+value = "true"
+conditions = [
+  { request_count = ">10" },
+  { time = "<5m" }  # Bloqueo durante 5 minutos si se superan las 10 solicitudes
+]
+
+[[headers]]
+name = "X-Blocked-Access"
+value = "true"
+conditions = [
+  { request_count = ">100" },  # Si se superan las 100 solicitudes
+  { time = "<48h" }  # Bloqueo por 48 horas
+]
+
+[[timeouts]]
+header = { min_rate = 600, max_time = "5-10s" }
+body = { min_rate = 600, max_time = "5-10s" }
+
+[[logging]]
+log_format = "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
+log_file = "logs/access_custom.log"
+
+[[headers]]
+name = "X-Blocked-Reload-24h"
+value = "true"
+conditions = [
+  { time = ">24h" },  # Bloqueo extendido a 24 horas
+  { request_count = ">10" }
+]
+
+[[headers]]
+name = "X-File-Size-Limit"
+value = "true"
+conditions = [
+  { content_length = ">5242880" } # 5 MB
+]
+
+[[headers]]
+for = "/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+Content-Encoding = "gzip"
+Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+[[headers]]
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+X-XSS-Protection = "1; mode=block"
+
+[[redirects]]
+from = "/.env"
+to = "/403.html"
+status = 403
+
+[[redirects]]
+from = "/.git/*"
+to = "/403.html"
+status = 403
+
+[[headers]]
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+X-XSS-Protection = "1; mode=block"
+Referrer-Policy = "no-referrer-when-downgrade"
+Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://trusted-scripts.com"
+Access-Control-Allow-Origin = "*"
+
+[[redirects]]
+from = "/admin/*"
+to = "/403.html"
+status = 403
+
+[[redirects]]
+from = "/private/*"
+to = "/403.html"
+status = 403
+
+[[redirects]]
+  from = "/*"
+  to = "/block"
+  status = 403
+  force = true
+  conditions = { User-Agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1" }
+
+[[redirects]]
+  from = "/*"
+  to = "/block"
+  status = 403
+  force = true
+  conditions = { User-Agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1" }
+
+[[redirects]]
+  from = "/*"
+  to = "/block"
+  status = 403
+  force = true
+  conditions = { User-Agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1" }
+
+[[redirects]]
+  from = "/*"
+  to = "/block"
+  status = 403
+  force = true
+  conditions = { User-Agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1" }
+
+[[redirects]]
+  from = "/*"
+  to = "/block"
+  status = 403
+  force = true
+  conditions = { User-Agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" }
+
+[[redirects]]
+  from = "/*"
+  to = "/block"
+  status = 403
+  force = true
+  conditions = { User-Agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36" }
+
+[[redirects]]
+  from = "/block"
+  to = "/"
+  status = 403
+  force = true
+  headers = { "Cache-Control" = "no-store" }
+
+[build]
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/block-user-agents"
+  status = 200
+  force = true
+
+  [build]
+  publish = "public"
+  functions = "functions"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; connect-src 'self'; frame-src 'none'; form-action 'self'; base-uri 'self';"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Feature-Policy = "geolocation 'none'; microphone 'none'; camera 'none';"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Content-Security-Policy = "default-src 'self';"
+
+[[headers]]
+  for = "/login/*"
+  [headers.values]
+    Content-Security-Policy = "script-src 'self'; object-src 'none';"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self';"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Content-Security-Policy = "default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval';"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/uploads/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; object-src 'none';"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self';"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Content-Security-Policy = "default-src 'self';"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Feature-Policy = "geolocation 'none'; microphone 'none'; camera 'none';"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-XSS-Protection = "1; mode=block"
+    X-Frame-Options = "DENY"
+    Content-Type = "application/json"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/private/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Content-Security-Policy = "default-src 'self';"
+
+[[edge_functions]]
+  path = "/*"
+  function = "rate-limit"
+
+Sitemap = "https://undefinedname-rr.netlify.app/sitemap.xml"
